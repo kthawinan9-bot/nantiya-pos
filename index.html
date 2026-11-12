@@ -2611,7 +2611,7 @@
             </div>
           </div>
 
-          <!-- เรทราคาส่ง -->
+ <!-- เรทราคาส่ง -->
           <div class="p-3.5 bg-rose-50/70 rounded-2xl border border-rose-200 space-y-2">
             <div class="flex justify-between items-center">
               <div>
@@ -2621,14 +2621,20 @@
               <button type="button" @click="addWholesaleTierRow" class="text-[11px] text-rose-600 font-bold hover:underline shrink-0">+ เพิ่มเรทส่ง</button>
             </div>
             
-            <div class="space-y-1.5 max-h-32 overflow-y-auto">
+            <div class="space-y-1.5 max-h-36 overflow-y-auto">
               <div v-for="(tier, tIdx) in productForm.options.wholesale_tiers" :key="tIdx" 
-                   class="flex items-center gap-1.5 p-2 bg-white rounded-xl border border-rose-200 text-xs">
+                   class="flex flex-wrap sm:flex-nowrap items-center gap-1.5 p-2 bg-white rounded-xl border border-rose-200 text-xs">
                 <span class="text-[11px] text-rose-500 shrink-0">ครบ</span>
                 <input v-model.number="tier.min_qty" type="number" min="1" placeholder="3" class="setting-input w-14 text-center font-bold">
                 <span class="text-[11px] text-rose-500 shrink-0">ชิ้น เหมา</span>
                 <input v-model.number="tier.bundle_price" type="number" min="0" placeholder="100" class="setting-input w-20 text-right font-bold text-amber-600">
                 <span class="text-[11px] text-rose-500 shrink-0">฿</span>
+
+                <!-- ป้ายแสดงราคาเฉลี่ยต่อ 1 ชิ้นอัตโนมัติ -->
+                <span v-if="tier.min_qty > 0 && tier.bundle_price > 0" 
+                      class="px-2 py-0.5 bg-amber-50 text-amber-700 border border-amber-200 rounded-lg text-[10px] font-semibold shrink-0">
+                  เฉลี่ยอันละ {{ formatNumber(tier.bundle_price / tier.min_qty) }} บาท
+                </span>
                 
                 <button type="button" @click="productForm.options.wholesale_tiers.splice(tIdx, 1)" class="text-rose-500 hover:text-rose-700 font-bold ml-auto px-1">✕</button>
               </div>
