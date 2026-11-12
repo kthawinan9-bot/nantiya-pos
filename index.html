@@ -5639,18 +5639,56 @@ const timelineSlots = computed(() => {
           loginSelectedStaffId.value = staffList.value[0].id;
         }
 
-        // 3. ดึงข้อมูลล่าสุดจาก Google Sheets (Apps Script Backend)
-        if (typeof google !== 'undefined' && google.script) {
-          google.script.run.withSuccessHandler((res) => {
-            if (!res) return;
-            if (res.products) { products.value = res.products; localStorage.setItem('POS_CACHE_PRODUCTS', JSON.stringify(res.products)); }
-            if (res.sales) sales.value = res.sales;
-            if (res.settings) { settings.value = { ...settings.value, ...res.settings }; localStorage.setItem('POS_CACHE_SETTINGS', JSON.stringify(res.settings)); }
-            if (res.members) { membersList.value = res.members; localStorage.setItem('POS_CACHE_MEMBERS', JSON.stringify(res.members)); }
-            if (res.promotions && res.promotions.length > 0) { settings.value.promotions_list = res.promotions; }
-            if (res.staff && res.staff.length > 0) { staffList.value = res.staff; localStorage.setItem('POS_CACHE_STAFF', JSON.stringify(res.staff)); }
-          }).getInitialData();
-        }
+// 3. ดึงข้อมูลล่าสุดจาก Google Sheets (ซิงค์กะ สต็อก และยอดขายให้ตรงกันทุกเครื่อง)
+        const syncAllDataFromCloud = () => {
+          if (typeof google !== 'undefined' && google.script) {
+            google.script.run.withSuccessHandler((res) => {
+              if (!res) return;
+              if (res.products) {
+                products.value = res.products;
+                localStorage.setItem('POS_CACHE_PRODUCTS', JSON.stringify(res.products));
+              }
+              if (res.sales) {
+                sales.value = res.sales;
+                localStorage.setItem('POS_CACHE_SALES', JSON.stringify(res.sales));
+              }
+              if (res.settings) {
+                settings.value = { ...settings.value, ...res.settings };
+                localStorage.setItem('POS_CACHE_SETTINGS', JSON.stringify(res.settings));
+              }
+              if (res.members) {
+                membersList.value = res.members;
+                localStorage.setItem('POS_CACHE_MEMBERS', JSON.stringify(res.members));
+              }
+              if (res.promotions && res.promotions.length > 0) {
+                settings.value.promotions_list = res.promotions;
+              }
+              if (res.staff && res.staff.length > 0) {
+                staffList.value = res.staff;
+                localStorage.setItem('POS_CACHE_STAFF', JSON.stringify(res.staff));
+              }
+
+              // ซิงค์สถานะการเปิด-ปิดกะจาก Google Sheets ให้ตรงกันทุกเครื่อง
+              if (Array.isArray(res.shifts)) {
+                const openShift = res.shifts.find(sh => sh.status === 'OPEN');
+                if (openShift) {
+                  currentShift.value = openShift;
+                  localStorage.setItem('POS_CURRENT_SHIFT', JSON.stringify(openShift));
+                } else {
+                  currentShift.value = null;
+                  localStorage.removeItem('POS_CURRENT_SHIFT');
+                }
+                const closedShifts = res.shifts.filter(sh => sh.status === 'CLOSED').reverse();
+                shiftHistory.value = closedShifts;
+                localStorage.setItem('POS_SHIFTS_HISTORY', JSON.stringify(closedShifts));
+              }
+            }).getInitialData();
+          }
+        };
+
+        // ดึงข้อมูลทันทีเมื่อเปิดหน้าเว็บ และดึงซ้ำอัตโนมัติเมื่อสลับกลับมาที่หน้าจอนี้
+        syncAllDataFromCloud();
+        window.addEventListener('focus', syncAllDataFromCloud);
 
         // 4. ตั้งตัวรับสัญญาณเครื่องยิงบาร์โค้ด
         let barcodeBuffer = '';
